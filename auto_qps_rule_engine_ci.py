@@ -14,7 +14,6 @@ EMAIL = (os.getenv("PLAYDIGO_EMAIL") or "").strip()
 PASSWORD = (os.getenv("PLAYDIGO_PASSWORD") or "").strip()
 
 TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "30"))
-DRY_RUN = (os.getenv("DRY_RUN", "1").strip().lower() in ("1","true","yes"))
 CONFIRM_LIVE = (os.getenv("CONFIRM_LIVE", "").strip().upper() == "YES")  # required when DRY_RUN=0
 
 OUTDIR = pathlib.Path("outputs")
