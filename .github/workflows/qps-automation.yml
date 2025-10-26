@@ -2,8 +2,7 @@ name: QPS Rule Engine (Auto Hourly)
 
 on:
   schedule:
-    # run every hour at minute 7
-    - cron: "7 * * * *"
+    - cron: "7 * * * *"   # every hour at :07
   workflow_dispatch:
 
 permissions:
@@ -27,11 +26,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests
 
-      - name: Run QPS automation
+      - name: Run QPS automation (LIVE)
         env:
           PLAYDIGO_EMAIL: ${{ secrets.PLAYDIGO_EMAIL }}
           PLAYDIGO_PASSWORD: ${{ secrets.PLAYDIGO_PASSWORD }}
-          DRY_RUN: "0"          # <-- LIVE MODE always on
           HTTP_TIMEOUT: "30"
         run: |
           python auto_qps_rule_engine_ci.py
