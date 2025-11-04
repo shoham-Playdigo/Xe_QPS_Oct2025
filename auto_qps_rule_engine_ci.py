@@ -14,6 +14,14 @@ EMAIL     = (os.getenv("PLAYDIGO_EMAIL") or "").strip()
 PASSWORD  = (os.getenv("PLAYDIGO_PASSWORD") or "").strip()
 TIMEOUT   = int(os.getenv("HTTP_TIMEOUT", "30"))
 
+# Exclusions (by DSP name, case-insensitive). Default excludes "Media.Net".
+# You can override with: EXCLUDED_DSPS="Media.Net,Another DSP"
+EXCLUDED_NAMES = {
+    x.strip().lower()
+    for x in (os.getenv("EXCLUDED_DSPS") or "Media.Net").split(",")
+    if x.strip()
+}
+
 OUTDIR = pathlib.Path("outputs")
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
@@ -154,13 +162,20 @@ def main() -> int:
 
     for s in summaries:
         dsp_id   = int(s.get("id"))
-        dsp_name = s.get("name", "")
+        dsp_name = s.get("name", "") or ""
         srpm     = float(s.get("sRPM") or 0)
 
-    # Skip Media.Net DSP
-    if dsp_name.strip().lower() == "media.net":
-        print(f"Skipping DSP {dsp_name} (excluded)")
-        continue
+        # ---- Exclude certain DSPs by name ----
+        if dsp_name.strip().lower() in EXCLUDED_NAMES:
+            print(f"Skipping DSP {dsp_name} (excluded)")
+            results.append({
+                "dsp_id": dsp_id,
+                "name": dsp_name,
+                "sRPM": srpm,
+                "status": "skipped_excluded"
+            })
+            continue
+        # --------------------------------------
 
         try:
             detail = get_detail(dsp_id, token)
