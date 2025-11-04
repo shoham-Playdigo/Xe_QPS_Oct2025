@@ -152,10 +152,10 @@ def main() -> int:
     updated = 0
     failed  = 0
 
-for s in summaries:
-    dsp_id   = int(s.get("id"))
-    dsp_name = s.get("name", "")
-    srpm     = float(s.get("sRPM") or 0)
+    for s in summaries:
+        dsp_id   = int(s.get("id"))
+        dsp_name = s.get("name", "")
+        srpm     = float(s.get("sRPM") or 0)
 
     # Skip Media.Net DSP
     if dsp_name.strip().lower() == "media.net":
