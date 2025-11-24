@@ -124,9 +124,9 @@ def decide_new_limit(srpm: float, real_qps: float, current_limit: int) -> Tuple[
     """
     Rules:
     1) sRPM == 0 → set 50
-    2) sRPM > 0.3 & real_qps >= 50% of limit → +15% (cap 30000)
+    2) sRPM > 0.2 & real_qps >= 50% of limit → +15% (cap 30000)
     3) sRPM > 3   & real_qps >= 70% of limit → +15% (no cap)
-    4) sRPM < 0.2 → −15% (floor 500)
+    4) sRPM < 0.1 → −15% (floor 500)
     """
     srpm = float(srpm or 0)
     real_qps = float(real_qps or 0)
