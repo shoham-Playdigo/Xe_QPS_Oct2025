@@ -30,7 +30,7 @@ jobs:
         env:
           PLAYDIGO_EMAIL: ${{ secrets.PLAYDIGO_EMAIL }}
           PLAYDIGO_PASSWORD: ${{ secrets.PLAYDIGO_PASSWORD }}
-          EXCLUDED_dsp_id: "2202,2183,2284,2184,2377,2237"
+          EXCLUDED_dsp_id: "2202,2183,2284,2184,2377,2237,2393"
           HTTP_TIMEOUT: "30"
         run: |
           python auto_qps_rule_engine_ci.py
