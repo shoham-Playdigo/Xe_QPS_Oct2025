@@ -16,6 +16,14 @@ TIMEOUT   = int(os.getenv("HTTP_TIMEOUT", "30"))
 
 # Exclusions (by DSP name, case-insensitive). Default excludes "Media.Net".
 # You can override with: EXCLUDED_DSPS="Media.Net,Another DSP"
+# New: Exclusions by ID
+EXCLUDED_IDS = {
+    int(x.strip())
+    for x in (os.getenv("EXCLUDED_dsp_id") or "").split(",") # Reads the IDs from workflow
+    if x.strip().isdigit()
+}
+
+# Keep this for backward compatibility (defaults to Media.Net if ID list is empty)
 EXCLUDED_NAMES = {
     x.strip().lower()
     for x in (os.getenv("EXCLUDED_DSPS") or "Media.Net").split(",")
