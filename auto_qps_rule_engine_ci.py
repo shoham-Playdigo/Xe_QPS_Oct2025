@@ -4,11 +4,11 @@ from typing import Any, Dict, List, Tuple
 import requests
 
 # ======== Config via env (no dry-run flags) ========
-BASE_URL="https://dashapi.xe.works"
-AUTH_PATH  = "/playdigo/auth"
-LIST_DSPS  = "/playdigo/dsp"
-GET_DSP    = "/playdigo/dsp/{id}"
-PUT_DSP    = "/playdigo/dsp/{id}"
+BASE_URL = "https://dashapi.xe.works"
+AUTH_PATH = "/playdigo/auth"
+LIST_DSPS = "/playdigo/dsp"
+GET_DSP = "/playdigo/dsp/{id}"
+PUT_DSP = "/playdigo/dsp/{id}"
 
 EMAIL     = (os.getenv("PLAYDIGO_EMAIL") or "").strip()
 PASSWORD  = (os.getenv("PLAYDIGO_PASSWORD") or "").strip()
