@@ -97,37 +97,27 @@ def ensure_inventory(obj: dict) -> dict:
         },
     }
 
-def scrub_readonly(d: Dict[str, Any]) -> Dict[str, Any]:
-    ro = {"created_at","updated_at","createdAt","updatedAt","last_update","lastUpdate","_id"}
-    return {k:v for k,v in d.items() if k not in ro}
-
 def build_put_body(detail: Dict[str, Any], dsp_id: int, new_qps: int) -> Dict[str, Any]:
-    base = scrub_readonly(detail)
-    old_data = {
-        "id": int(dsp_id),
-        "api_endpoint": base.get("api_endpoint", base.get("endpoint","")),
-        "Company": base.get("Company", {
-            "id": base.get("company_id", 0),
-            "name": base.get("company_name", ""),
-            "api_key": base.get("api_key", "")
-        }),
-        "Size": base.get("Size", [{"code": "string"}]),
-        "OperatingSystem": base.get("OperatingSystem", [{"key": "string", "name": "string"}]),
-        "Country": base.get("Country", [{"country_code": "str"}]),
-        "blockedSsp": base.get("blockedSsp", []),
-        "Inventory": ensure_inventory(base),
+    # 1. Scrub system-generated fields that the API might reject if sent back
+    clean_detail = scrub_readonly(detail)
+    
+    # 2. oldData must now be a full representation of the current state
+    # We use copy.deepcopy to ensure we don't accidentally mutate the "old" state
+    old_data = copy.deepcopy(clean_detail)
+    old_data["id"] = int(dsp_id)
+    
+    # 3. updatedData starts as a copy of the current state, then we change the QPS
+    updated_data = copy.deepcopy(clean_detail)
+    updated_data["id"] = int(dsp_id)
+    
+    # Update both possible QPS keys to be safe
+    updated_data["qps_limit"] = int(new_qps)
+    updated_data["qps_Limit"] = int(new_qps)
+    
+    return {
+        "oldData": old_data, 
+        "updatedData": updated_data
     }
-    updated = copy.deepcopy(base)
-    updated["id"] = int(dsp_id)
-    updated["Inventory"] = ensure_inventory(base)
-    updated["Size"] = base.get("Size", [{"code": "string"}])
-    updated["OperatingSystem"] = base.get("OperatingSystem", [{"key": "string", "name": "string"}])
-    updated["Country"] = base.get("Country", [{"country_code": "str"}])
-    updated["blockedSsp"] = base.get("blockedSsp", [])
-    # set both keys to be safe
-    updated["qps_limit"] = int(new_qps)
-    updated["qps_Limit"] = int(new_qps)
-    return {"oldData": old_data, "updatedData": updated}
 
 # ======== rule engine ========
 def decide_new_limit(srpm: float, real_qps: float, current_limit: int) -> Tuple[str, int, str]:
