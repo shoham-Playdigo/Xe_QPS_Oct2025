@@ -105,11 +105,15 @@ def build_put_body(detail: Dict[str, Any], dsp_id: int, new_qps: int) -> Dict[st
     # 1. Clean the incoming detail of read-only keys
     clean_detail = scrub_readonly(detail)
     
-    # 2. Map oldData to the full current state to satisfy the new API requirements
+    # 2. Map oldData to the full current state
     old_data = copy.deepcopy(clean_detail)
     old_data["id"] = int(dsp_id)
-    # Ensure nested inventory is correctly formatted
     old_data["Inventory"] = ensure_inventory(clean_detail)
+    
+    # Ensure BOTH casing versions of QPS are in oldData to pass validation
+    current_val = detail.get("qps_limit") or detail.get("qps_Limit") or 0
+    old_data["qps_limit"] = int(current_val)
+    old_data["qps_Limit"] = int(current_val)
     
     # 3. Create updatedData with the new QPS limits
     updated_data = copy.deepcopy(old_data)
