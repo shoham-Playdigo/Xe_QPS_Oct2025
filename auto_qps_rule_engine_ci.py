@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Tuple
 import requests
 
 # ======== Config via env (no dry-run flags) ========
-# NOTE: The strange spacing characters have been removed here to fix the SyntaxError.
 BASE_URL = "https://dashapi.xe.works"
 AUTH_PATH = "/playdigo/auth"
 LIST_DSPS = "/playdigo/dsp"
@@ -16,15 +15,12 @@ PASSWORD = (os.getenv("PLAYDIGO_PASSWORD") or "").strip()
 TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "30"))
 
 # --- START: EXCLUSION LOGIC ---
-# Exclusions by ID. Reads the variable EXCLUDED_dsp_id from the workflow.
 EXCLUDED_IDS = {
     int(x.strip())
     for x in (os.getenv("EXCLUDED_dsp_id") or "").split(",")
     if x.strip().isdigit()
 }
 
-# Exclusions (by DSP name, case-insensitive). Default excludes "Media.Net".
-# You can override with: EXCLUDED_DSPS="Media.Net,Another DSP"
 EXCLUDED_NAMES = {
     x.strip().lower()
     for x in (os.getenv("EXCLUDED_DSPS") or "Media.Net").split(",")
@@ -73,7 +69,14 @@ def put_update(dsp_id: int, payload: Dict[str, Any], token: str) -> requests.Res
                           "Accept":"application/json", "Content-Type":"application/json"})
 
 # ======== payload hardening ========
+
+def scrub_readonly(d: Dict[str, Any]) -> Dict[str, Any]:
+    """Removes system-generated fields that cause API validation errors."""
+    ro = {"created_at","updated_at","createdAt","updatedAt","last_update","lastUpdate","_id"}
+    return {k:v for k,v in d.items() if k not in ro}
+
 def ensure_inventory(obj: dict) -> dict:
+    """Ensures the inventory structure is present and correctly formatted."""
     inv = obj.get("Inventory") or {}
     allowed = inv.get("allowed") or {}
     blocked = inv.get("blocked") or {}
@@ -98,26 +101,22 @@ def ensure_inventory(obj: dict) -> dict:
     }
 
 def build_put_body(detail: Dict[str, Any], dsp_id: int, new_qps: int) -> Dict[str, Any]:
-    # 1. Scrub system-generated fields that the API might reject if sent back
+    """Constructs the full payload required by the updated Xe API."""
+    # 1. Clean the incoming detail of read-only keys
     clean_detail = scrub_readonly(detail)
     
-    # 2. oldData must now be a full representation of the current state
-    # We use copy.deepcopy to ensure we don't accidentally mutate the "old" state
+    # 2. Map oldData to the full current state to satisfy the new API requirements
     old_data = copy.deepcopy(clean_detail)
     old_data["id"] = int(dsp_id)
+    # Ensure nested inventory is correctly formatted
+    old_data["Inventory"] = ensure_inventory(clean_detail)
     
-    # 3. updatedData starts as a copy of the current state, then we change the QPS
-    updated_data = copy.deepcopy(clean_detail)
-    updated_data["id"] = int(dsp_id)
-    
-    # Update both possible QPS keys to be safe
+    # 3. Create updatedData with the new QPS limits
+    updated_data = copy.deepcopy(old_data)
     updated_data["qps_limit"] = int(new_qps)
     updated_data["qps_Limit"] = int(new_qps)
     
-    return {
-        "oldData": old_data, 
-        "updatedData": updated_data
-    }
+    return {"oldData": old_data, "updatedData": updated_data}
 
 # ======== rule engine ========
 def decide_new_limit(srpm: float, real_qps: float, current_limit: int) -> Tuple[str, int, str]:
@@ -165,7 +164,7 @@ def main() -> int:
         dsp_name = s.get("name", "") or ""
         srpm = float(s.get("sRPM") or 0)
 
-        # --- EXCLUSION CHECK (Corrected) ---
+        # --- EXCLUSION CHECK ---
         is_excluded = False
         reason_text = ""
         
@@ -186,7 +185,6 @@ def main() -> int:
                 "reason": reason_text
             })
             continue
-        # -----------------------------------
 
         try:
             detail = get_detail(dsp_id, token)
@@ -242,7 +240,7 @@ def main() -> int:
     print("\n===== Summary =====")
     print(f"Evaluated: {len(results)} | Updated: {updated} | Failed: {failed}")
     print(f"Audit CSV → {out_path}")
-    return 0 if failed == 0 else 0  # never fail the workflow unless fatal
+    return 0 
 
 if __name__ == "__main__":
     sys.exit(main())
