@@ -139,9 +139,9 @@ def decide_new_limit(srpm: float, real_qps: float, current_limit: int) -> Tuple[
         return ("set", 50, "sRPM==0 → set 50")
     if srpm > 3 and current > 0 and real_qps >= 0.70 * current:
         return ("increase", math.ceil(current * 1.15), "sRPM>3 & ≥70% → +15% (no cap)")
-    if srpm > 0.3 and current > 0 and real_qps >= 0.50 * current:
+    if srpm > 0.5 and current > 0 and real_qps >= 0.50 * current:
         return ("increase", min(30000, math.ceil(current * 1.15)), "sRPM>0.5 & ≥50% → +15% (cap 30000)")
-    if srpm < 0.5 and current > 0:
+    if srpm < 0.2 and current > 0:
         return ("decrease", max(500, math.ceil(current * 0.85)), "sRPM<0.3 → −15% (floor 500)")
     return ("hold", current, "no change")
 
